@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <!--  <script src="../d3.min.js"></script> Use D3 library from CDN -->
+  <script src="https://d3js.org/d3.v4.js"></script>
+  <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+    integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+    crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+    integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
+    crossorigin="anonymous"></script>
+  <script src="https://bl.ocks.org/syntagmatic/raw/3341641/render-queue.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+    integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
+    crossorigin="anonymous"></script>
+  <!-- <link rel="stylesheet" type="text/css" href="css/style.css"> -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+    integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+  </link>
+
+  <!-- <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script> -->
+  <style>
+    .foreground path {
+      fill: none;
+      stroke: teal;
+    }
+
+    .background path {
+      fill: none;
+      stroke: #ddd;
+      shape-rendering: crispEdges;
+    }
+
+    .axis line,
+    .axis path {
+      fill: none;
+      stroke: #000;
+      shape-rendering: crispEdges;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .axis text {
+      text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;
+      cursor: move;
+      font: 12px sans-serif;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <a class="navbar-brand" href="#">AIRBNB ratings and reviews for Amsterdam</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
+      aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav mr-auto">
+       
+    </div>
+  </nav> -->
+
+
+
+  <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <a class="navbar-brand" href="#">AIRBNB ratings and reviews for Amsterdam</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
+      aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav mr-auto">
+        <li class="nav-item active">
+          <button class="nav-link" onclick="window.location.href='{{ url_for('index') }}';"
+            style="border:1px; border-radius:10px">Scree and Biplot</button>
+        </li>
+        &nbsp; &nbsp;
+        <li class="nav-item active">
+          <button class="nav-link" onclick="window.location.href='{{ url_for('mds_render') }}';"
+            style="border:1px; border-radius:10px; padding-left:2px">MDS plot</button>
+        </li>
+        &nbsp; &nbsp;
+        <li class="nav-item active">
+          <button class="nav-link" onclick="window.location.href='{{ url_for('PCP_render') }}';"
+            style="border:1px; border-radius:10px; padding-left:2px">PCP plot</button>
+        </li>
+      </ul>
+    </div>
+  </nav>
+
+  <br>
+  <br>
+  <div id="PCP"></div>
+  <script type='text/javascript'>
+    var data = {{ data.chart_data | safe }};
+    let activeBrushes = new Map()
+    renderPCP()
+    function renderPCP() {
+      var margin = { top: 100, right: 100, bottom: 100, left: 50 },
+        width = 1900 - margin.left - margin.right,
+        height = 750 - margin.top - margin.bottom;
+      var x = d3.scaleBand().range([0, width], 1),
+        y = {},
+        dragging = {};
+      var line = d3.line(),
+        axis = d3.axisLeft(),
+        // background,
+        foreground;
+      var svg = d3.select("#PCP").append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+      d3.select("#PCP")
+        .select("svg")
+        .append("text")
+        .attr("x", 90)
+        .attr("y", 30)
+        .style("font-size", "30px")
+        .text("Parallel Coordinates Plot");
+      // d3.csv("cars.csv", function (error, cars) {
+      // Extract the list of dimensions and create a scale for each.
+      x.domain(dimensions = d3.keys(data["numeric_clustered_data"][0]).filter(function (d) {
+        return d != "cluster" && (y[d] = d3.scaleLinear()
+          .domain(d3.extent(data["numeric_clustered_data"], function (p) {
+            return +p[d];
+          }))
+          .range([height, 0]));
+      }));
+      var color = d3.scaleOrdinal().domain([0, 1, 2]).range(["Red", "Orange", "Teal"]);
+      // Add grey background lines for context.
+      background = svg.append("g")
+          .attr("class", "background")
+          .selectAll("path")
+          .data(data["numeric_clustered_data"])
+          .enter().append("path")
+          .attr("d", path);
+      // Add blue foreground lines for focus.
+      foreground = svg.append("g")
+        .attr("class", "foreground")
+        .selectAll("path")
+        .data(data["numeric_clustered_data"])
+        .enter().append("path")
+        .attr("d", path)
+        .style("stroke", function (d) { return color(d.cluster) });
+      // Add a group element for each dimension.
+      var g = svg.selectAll(".dimension")
+        .data(dimensions)
+        .enter().append("g")
+        .attr("class", "dimension")
+        .attr("transform", function (d) { return "translate(" + x(d) + ")"; })
+        .call(d3.drag()
+          .subject(function (d) { return { x: x(d) }; })
+          .on("start", function (d) {
+            dragging[d] = x(d);
+            background.attr("visibility", "hidden");
+          })
+          .on("drag", function (d) {
+            dragging[d] = Math.min(width, Math.max(0, d3.event.x));
+            foreground.attr("d", path);
+            dimensions.sort(function (a, b) { return position(a) - position(b); });
+            x.domain(dimensions);
+            g.attr("transform", function (d) { return "translate(" + position(d) + ")"; })
+          })
+          .on("end", function (d) {
+            delete dragging[d];
+            transition(d3.select(this)).attr("transform", "translate(" + x(d) + ")");
+            transition(foreground).attr("d", path);
+            background
+              .attr("d", path)
+              .transition()
+              .delay(500)
+              .duration(0)
+              .attr("visibility", null);
+          }));
+      // Add an axis and title.
+
+      g.append("g")
+        .attr("class", "axis")
+        .each(function (d) { d3.select(this).call(axis.scale(y[d])); })
+        .append("text")
+        .style("text-anchor", "middle")
+        .attr("y", -9)
+        .text(function (d) { return d; })
+        .style("fill", "black")
+        .attr("class", "axis");
+
+      g
+        .append("g")
+        .attr("class", "brush")
+        .each(function (d) {
+          // d3.select(this).call(y[d].brush = d3.brush().y(y[d]).on("brushstart", brushstart).on("brush", brush));
+          d3.select(this).call(y[d].brush = d3.brushY().extent([[-10, 0], [10, height]]).on("brush", brushed).on("end", brushEnd));
+        })
+        .selectAll("rect")
+        .attr("x", -8)
+        .attr("width", 16);
+
+      function updateBrushing() {
+        console.log("updateBrushing")
+        svg.selectAll("path").classed("hidden", d => {
+          var path_visible = true;
+          //for every attribute, check if it is brushed
+          dimensions.forEach(attribute => {
+            var attr_visible = true;
+            //if there is a brush for current attribute
+            if (activeBrushes.get(attribute) != undefined) {
+              //get event.selection for attribute
+              const y0 = activeBrushes.get(attribute)[0]
+              const y1 = activeBrushes.get(attribute)[1]
+              if (d != null) {
+                //for current path, get the value for current attribute
+                const value = y[attribute](d[attribute])
+                // console.log(value)
+                //check if value in brush selection
+                if (y0 <= value && y1 >= value) { attr_visible = true; }
+                else { attr_visible = false; }
+              }
+            }
+            path_visible = (path_visible && attr_visible);
+          })
+          // console.log(!path_visible)
+          return !path_visible;
+        })
+      }
+      function brushed(attribute) {
+        console.log("brushed")
+        activeBrushes.set(attribute, d3.event.selection);
+        // console.log(activeBrushes)
+        updateBrushing();
+      }
+      function brushEnd(attribute) {
+        console.log("brushEnd")
+        if (d3.event.selection !== null) return;
+        activeBrushes.delete(attribute);
+        updateBrushing();
+      }
+      function position(d) {
+        var v = dragging[d];
+        return v == null ? x(d) : v;
+      }
+      function transition(g) {
+        return g.transition().duration(500);
+      }
+      // Returns the path for a given data point.
+      function path(d) {
+        return line(dimensions.map(function (p) { return [position(p), y[p](d[p])]; }));
+      }
+      // function brushstart() {
+      //     d3.event.sourceEvent.stopPropagation();
+      // }
+      // // Handles a brush event, toggling the display of foreground lines.
+      // function brush() {
+      //     var actives = dimensions.filter(function (p) { return !y[p].brush.empty(); }),
+      //         extents = actives.map(function (p) { return y[p].brush.extent(); });
+      //     foreground.style("display", function (d) {
+      //         return actives.every(function (p, i) {
+      //             return extents[i][0] <= d[p] && d[p] <= extents[i][1];
+      //         }) ? null : "none";
+      //     });
+      // }
+    }
+  </script>
+</body>
+
+</html>

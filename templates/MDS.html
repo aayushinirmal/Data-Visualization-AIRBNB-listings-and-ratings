@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <!--  <script src="../d3.min.js"></script> Use D3 library from CDN -->
+  <script src="https://d3js.org/d3.v4.js"></script>
+  <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+    integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+    crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+    integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
+    crossorigin="anonymous"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+    integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
+    crossorigin="anonymous"></script>
+  <!-- <link rel="stylesheet" type="text/css" href="css/style.css"> -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+    integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+  </link>
+  <title>
+    AIRBNB ratings and reviews for Amsterdam
+  </title>
+  <style>
+    svg {
+  font: 10px sans-serif;
+  padding: 12px;
+}
+.axis,
+.frame {
+  shape-rendering: crispEdges;
+}
+.axis line {
+  stroke: #e8e8e8;
+}
+.axis path {
+  display: none;
+}
+.axis text {
+  fill: #999;
+}
+.cell text {
+  font-weight: bold;
+  text-transform: capitalize;
+  font-size: 15px;
+  fill: #222;
+}
+.frame {
+  fill: none;
+  stroke: #aaa;
+}
+.diagonal {
+  stroke: none;
+  fill: #fff;
+  fill-opacity: 0.8;
+}
+circle {
+  fill-opacity: .7;
+}
+circle.hidden {
+  fill: #ccc;
+}
+.extent {
+  fill: #000;
+  fill-opacity: .125;
+  stroke: #fff;
+}
+    #scatter, #my_table{
+      display: block;
+      margin-left: 100px;
+    }
+    #my_dataviz{
+      display: block;
+      
+    }
+  
+   
+  </style>
+</head>
+
+<body>
+
+  <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <a class="navbar-brand" href="#">AIRBNB ratings and reviews for Amsterdam</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
+      aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav mr-auto">
+        <li class="nav-item active">
+          <button class="nav-link" onclick="window.location.href='{{ url_for('index') }}';"
+            style="border:1px; border-radius:10px">Scree and Biplot</button>
+        </li>
+        &nbsp; &nbsp;
+        <li class="nav-item active">
+          <button class="nav-link" onclick="window.location.href='{{ url_for('mds_render') }}';"
+            style="border:1px; border-radius:10px; padding-left:2px">MDS plot</button>
+        </li>
+        &nbsp; &nbsp;
+        <li class="nav-item active">
+          <button class="nav-link" onclick="window.location.href='{{ url_for('PCP_render') }}';"
+            style="border:1px; border-radius:10px; padding-left:2px">PCP plot</button>
+        </li>
+      </ul>
+    </div>
+  </nav>
+  <br>
+<br>
+  <div style="width: 1200px; height: 550px; align-content: center;">
+  <div style="width: 50%; float: left;" id="Scatter_euc"><h2 style="text-align: center; margin-bottom: -50px;">Euclidean Scatter Plot</h2></div>
+  <div style="width: 50%; float: right;" id="Scatter_cor"><h2 style="text-align: center; margin-bottom: -52px;">Correlational Scatter Plot</h2></div>
+</div>
+  <div id="my_table"></div>
+  <br>
+  <br>
+  <!-- <div id="scatter_text"> <h2 style="text-align: center; visibility: hidden;">Scatter Plot</h2></div> -->
+  <div id="scatter"></div>
+  <script type='text/javascript'>
+    var data = {{ data.chart_data | safe }};
+    //console.log(JSON.parse(data))
+    
+    // var margin = {
+    //   top: 110,
+    //   right: 50,
+    //   bottom: 100,
+    //   left: 70
+    // },
+    //   width = 600 - margin.left - margin.right,
+    //   height = 500 - margin.top - margin.bottom;
+    
+    // var svg = d3.select("#my_dataviz")
+    //   .append("svg")
+    //   .attr("width", width + margin.left + margin.right)
+    //   .attr("height", height + margin.top + margin.bottom)
+    //   .append("g")
+    //   .attr("transform","translate(" + margin.left + "," + margin.top + ")");
+    
+
+   Scatter_euc()
+    function Scatter_euc() {
+    var width = 600,
+        height = 550;
+    var svg = d3.select("#Scatter_euc")
+        .append("svg")
+        .attr("width", width)
+        .attr("height", height);
+    var margin = 200,
+        width = svg.attr("width") - margin,
+        height = svg.attr("height") - margin;
+    var g = svg.append("g")
+        .attr("transform", "translate(" + 100 + "," + 100 + ")");
+    const xAxisG = g.append('g')
+        .attr('transform', "translate(0," + height + ")");
+    const yAxisG = g.append('g');
+    xAxisG.append('text')
+        .attr('class', 'axis-label')
+        .attr('x', width / 2)
+        .attr('y', 30)
+        .style("font-size", "15px")
+        .attr("class", "x label")
+        .attr("stroke", "black")
+        .text("MDS1_euc");
+    yAxisG.append('text')
+        .attr('class', 'axis-label')
+        .attr('x', -height / 2)
+        .attr('y', -30)
+        .attr('transform', `rotate(-90)`)
+        .style('text-anchor', 'middle')
+        .style("font-size", "15px")
+        .attr("class", "y label")
+        .attr("stroke", "black")
+        .text("MDS2_euc");
+    //Read the data
+    var x = d3.scaleLinear()
+        .domain([d3.min(data["MDS_euc"], function (d) { return +d["MDS1_euc"]; }), d3.max(data["MDS_euc"], function (d) { return +d["MDS1_euc"]; })])
+        .range([0, width]);
+    var x_scatter_scale = g.append("g")
+        .attr("transform", "translate(0," + height + ")")
+        .call(d3.axisBottom(x));
+    // Add Y axis
+    var y = d3.scaleLinear()
+        .domain([d3.min(data["MDS_euc"], function (d) { return +d["MDS2_euc"]; }), d3.max(data["MDS_euc"], function (d) { return +d["MDS2_euc"]; })])
+        .range([height, 0]);
+    g.append("g")
+        .call(d3.axisLeft(y));
+
+    var color = d3.scaleOrdinal(d3.schemeCategory10);
+    var colorValue = d => d["cluster"];
+    // Add dots
+    var plotting_area = g.append('g')
+    plotting_area.selectAll("dot")
+        .data(data["MDS_euc"])
+        .enter()
+        .append("circle")
+        .attr("class", "dot")
+        .attr("cx", function (d) { return x(d["MDS1_euc"]); })
+        .attr("cy", function (d) { return y(d["MDS2_euc"]); })
+        .attr("r", 2.5)
+        // .attr("fill", "#69b3a2")
+        .attr('fill', d => color(colorValue(d)))
+        .on("click", function (d) {
+            console.log(d.p_number);
+        });
+
+      
+   Scatter_cor()
+    function Scatter_cor() {
+    var width = 600,
+        height = 550;
+    
+    var svg = d3.select("#Scatter_cor")
+        .append("svg")
+        .attr("width", width)
+        .attr("height", height);
+    var margin = 200,
+        width = svg.attr("width") - margin,
+        height = svg.attr("height") - margin;
+    var g = svg.append("g")
+        .attr("transform", "translate(" + 100 + "," + 100 + ")");
+    const xAxisG = g.append('g')
+        .attr('transform', "translate(0," + height + ")");
+    const yAxisG = g.append('g');
+    xAxisG.append('text')
+        .attr('class', 'axis-label')
+        .attr('x', width / 2)
+        .attr('y', 30)
+        .style("font-size", "15px")
+        .attr("class", "x label")
+        .attr("stroke", "black")
+        .text("MDS1_cor");
+    yAxisG.append('text')
+        .attr('class', 'axis-label')
+        .attr('x', -height / 2)
+        .attr('y', -30)
+        .attr('transform', `rotate(-90)`)
+        .style('text-anchor', 'middle')
+        .style("font-size", "15px")
+        .attr("class", "y label")
+        .attr("stroke", "black")
+        .text("MDS2_cor");
+    //Read the data
+    
+    var x = d3.scaleLinear()
+        .domain([d3.min(data["MDS_cor"], function (d) { return +d["MDS1_cor"]; }), d3.max(data["MDS_cor"], function (d) { return +d["MDS1_cor"]; })])
+        .range([0, width]);
+    var x_scatter_scale = g.append("g")
+        .attr("transform", "translate(0," + height + ")")
+        .call(d3.axisBottom(x));
+    // Add Y axis
+    var y = d3.scaleLinear()
+        .domain([d3.min(data["MDS_cor"], function (d) { return +d["MDS2_cor"]; }), d3.max(data["MDS_cor"], function (d) { return +d["MDS2_cor"]; })])
+        .range([height, 0]);
+    g.append("g")
+        .call(d3.axisLeft(y));
+
+
+
+        var plotting_area = g.append('g')
+        var gdots = plotting_area.selectAll("g.dot")
+        .data(data["MDS_cor"])
+        .enter().append('g');
+    gdots.append("circle")
+        .attr("class", "dot")
+        .attr("r", 3)
+        .attr("cx", function (d) {
+            return x(d["MDS1_cor"]);
+        })
+        .attr("cy", function (d) {
+            return y(d["MDS2_cor"]);
+        })
+        .style("fill", "black");
+    gdots.append("text").text(function (d) {
+        return d["attributes"];
+    })
+        .style("font-size", "8px")
+        .attr("x", function (d) {
+            return x(d["MDS1_cor"]);
+        })
+        .attr("y", function (d) {
+            return y(d["MDS2_cor"]);
+        });
+    // // Add dots
+    // var plotting_area = g.append('g')
+    // var gdots = plotting_area.selectAll("dot")
+    //     .data(data["MDS_cor"])
+    //     .enter()
+    //     .append("circle")
+    //     .attr("class", "dot")
+    //     .attr("cx", function (d) { return x(d["MDS1_cor"]); })
+    //     .attr("cy", function (d) { return y(d["MDS2_cor"]); })
+    //     .attr("r", 2.5)
+    //     .attr("fill", "black");
+    //     // .on("click", function (d) {
+    //     //     console.log(d.p_number);
+    //     // });
+    //     gdots.append("text").text(function (d) {
+    //       console.log(d["attributes"])
+          
+    //     return d["attributes"];
+        
+    // })
+    //     .style("font-size", "8px")
+    //     .attr("fill", "black")
+    //     .attr("x", function (d) {
+    //         return x(d["MDS1_cor"]);
+    //     })
+    //     .attr("y", function (d) {
+    //         return y(d["MDS2_cor"]);
+    //     });
+
+      }
+    // plotting_area.selectAll("line")
+    //     .data(data["loadings"])
+    //     .enter()
+    //     .append("line")         // attach a line
+    //     .attr("class","pc_line")  // colour the line
+    //     .attr("x1", x(0))     // x position of the first end of the line
+    //     .attr("y1", y(0))      // y position of the first end of the line
+    //     .attr("x2", function (d) { return x(d["PC1"] ); })     // x position of the second end of the line
+    //     .attr("y2", function (d) { return y(d["PC2"] ); })
+    //     .attr("stroke", "red");
+
+
+    //     plotting_area.selectAll("text")
+    //     .data(data["loadings"])
+    //     .enter()
+    //     .append("text")         // attach a line
+    //     .attr("class", "text")  // colour the line
+    //     .attr("transform", function(d){return "translate(" + x(d["PC1"]) + ","+ y(d["PC2"]) + ") rotate("+ -1* Math.atan(d["PC2"]/d["PC1"]) * (180/Math.PI) +")";})
+    //     .text(function(d){return d.attributes})
+    //     // .style("fill","red")
+    //     .attr("class","biplot_text");
+    
+    
+}
+
+// function tabledisplay(table_data) {
+//         // data = top_attributes
+//         var data = table_data
+//         var title = d3.keys(data[0]);
+//         document.getElementById("my_table").innerHTML = ""
+        
+//         var table = d3.select('#my_table')
+//         table.append("text")
+//         .style("padding-bottom", "10px")
+//         .attr("text-anchor", "middle")  
+//         .style("font-size", "25px") 
+//         .style("text-decoration", "bold")  
+//         .text("Table with highest attribute loadings")
+//         .append('table');
+//         table.append('thead').append('tr')
+//             .selectAll('th')
+//             .data(title).enter()
+//             .append("th")
+//             .text(function(d) { return d; });
+//         var rows = table.append('tbody').selectAll('tr')
+//             .data(data).enter()
+//             .append('tr');
+//         rows.selectAll('td')
+//             .data(function (d) {
+//                 return title.map(function (k) {
+//                     return { 'value': d[k], 'name': k };
+//                 });
+//             }).enter()
+//             .append('td')
+//             .attr('data-th', function (d) {
+//                 return d.name;
+//             })
+//             .text(function (d) {
+//                 return d.value;
+//             });
+// }
+
+// function tabledatacalculate(id, topAttributes) {
+//     var attributes_processed = 0, index = 0,
+//         tableData = [],
+//         pc_components = [],
+//         loadings =  data["loadings"],
+//         tableRecord;
+//     for (i = 1; i <= id; i++) {
+//         pc_components.push("PC" + i);
+//     }
+//     while (attributes_processed < topAttributes.length && index < loadings.length) {
+//         tableRecord = {}
+//         if (topAttributes.includes(loadings[index]["attributes"])) {
+//             tableRecord["attributes"] = loadings[index]["attributes"]
+//             pc_components.forEach(pc => {
+//                 tableRecord[pc] = loadings[index][pc]
+//             })
+//             tableData.push(tableRecord)
+//             attributes_processed += 1
+//         }
+//         index += 1
+//     }
+//     console.log(tableData)
+//     // return tableData
+//     tabledisplay(tableData)
+// }
+ 
+
+  </script>
+</body>
+
+</html>

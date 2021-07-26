@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <!--  <script src="../d3.min.js"></script> Use D3 library from CDN -->
+  <script src="https://d3js.org/d3.v4.js"></script>
+  <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+    integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+    crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+    integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
+    crossorigin="anonymous"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+    integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
+    crossorigin="anonymous"></script>
+  <!-- <link rel="stylesheet" type="text/css" href="css/style.css"> -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+    integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+  </link>
+
+  <!-- <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script> -->
+  <style>
+    svg {
+  font: 10px sans-serif;
+  padding: 12px;
+}
+.axis,
+.frame {
+  shape-rendering: crispEdges;
+}
+.axis line {
+  stroke: #e8e8e8;
+}
+.axis path {
+  display: none;
+}
+.axis text {
+  fill: #999;
+}
+.cell text {
+  font-weight: bold;
+  text-transform: capitalize;
+  font-size: 15px;
+  fill: #222;
+}
+.frame {
+  fill: none;
+  stroke: #aaa;
+}
+.diagonal {
+  stroke: none;
+  fill: #fff;
+  fill-opacity: 0.8;
+}
+circle {
+  fill-opacity: .7;
+}
+circle.hidden {
+  fill: #ccc !important;
+}
+.extent {
+  fill: #000;
+  fill-opacity: .125;
+  stroke: #fff;
+}
+    #scatter, #my_table{
+      display: block;
+      margin-left: 100px;
+    }
+    #my_dataviz{
+      display: block;
+      
+    }
+  
+    table { 
+		width: 100%; 
+		border-collapse: collapse; 
+	}
+  .pc_line {
+    fill: blue;
+  }
+	th { 
+		background: #333; 
+		color: white; 
+		font-weight: bold; 
+		cursor: s-resize;
+		background-repeat: no-repeat;
+        background-position: 3% center;
+	}
+	td, th { 
+		padding: 6px; 
+		border: 1px solid #ccc; 
+		text-align: left; 
+	}
+  </style>
+</head>
+
+<body>
+
+  <!-- <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <a class="navbar-brand" href="#">AIRBNB ratings and reviews for Amsterdam</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
+      aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav mr-auto">
+       
+    </div>
+  </nav> -->
+
+
+
+  <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <a class="navbar-brand" href="#">AIRBNB ratings and reviews for Amsterdam</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
+      aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav mr-auto">
+        <li class="nav-item active">
+          <button class="nav-link" onclick="window.location.href='{{ url_for('index') }}';"
+            style="border:1px; border-radius:10px">Scree and Biplot</button>
+        </li>
+        &nbsp; &nbsp;
+        <li class="nav-item active">
+          <button class="nav-link" onclick="window.location.href='{{ url_for('mds_render') }}';"
+            style="border:1px; border-radius:10px; padding-left:2px">MDS plot</button>
+        </li>
+        &nbsp; &nbsp;
+        <li class="nav-item active">
+          <button class="nav-link" onclick="window.location.href='{{ url_for('PCP_render') }}';"
+            style="border:1px; border-radius:10px; padding-left:2px">PCP plot</button>
+        </li>
+      </ul>
+    </div>
+  </nav>
+
+
+  <!-- <nav class="navbar navbar-inverse">
+    <div class="container-fluid">
+      <div class="navbar-header">
+        <a class="navbar-brand" href="#">AIRBNB listings and ratings in Amsterdam</a>
+      </div>
+      <ul class="nav navbar-nav">
+        <li><a href="index.html">Task 1 and 2</a></li>
+        <li><a href="MDS.html">Task 3</a></li>
+      </ul>
+    </div>
+  </nav> -->
+  
+  <br> 
+<br>
+  <div style="width: 1200px; height: 550px; align-content: center;">
+  <div style="width: 50%; float: left;" id="my_dataviz"><h2 style="text-align: center; margin-bottom: -50px;">Scree Plot</h2></div>
+  <div style="width: 50%; float: right;" id="biplot"><h2 style="text-align: center; margin-bottom: -52px;">Biplot</h2></div>
+</div>
+  <div id="my_table"></div>
+  <br>
+  <br>
+  <!-- <div id="scatter_text"> <h2 style="text-align: center; visibility: hidden;">Scatter Plot</h2></div> -->
+  <div id="scatter"></div>
+  <script type='text/javascript'>
+    var data = {{ data.chart_data | safe }};
+    //console.log(JSON.parse(data))
+    
+    var margin = {
+      top: 110,
+      right: 50,
+      bottom: 100,
+      left: 70
+    },
+      width = 600 - margin.left - margin.right,
+      height = 500 - margin.top - margin.bottom;
+    
+    var svg = d3.select("#my_dataviz")
+      .append("svg")
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+      .attr("transform","translate(" + margin.left + "," + margin.top + ")");
+    
+
+    screeplot(data.original);
+
+    function screeplot(value) {
+      // set the ranges
+      var xaxis = d3.scaleLinear().range([0, width]).domain([0, d3.max(value, function (d) { return d.PC_Number; })]);
+      var yaxis = d3.scaleLinear().range([height, 0]).domain([0, 100]);
+      var cumulative = [];
+      var index;
+      var xpix;
+      var ypix;
+      var yrange = [];
+
+      function intrinsicDimension(value) {
+        var done = false;
+        var sum = 0;
+        var temp;
+        for (var i = 0; i < value.length; i++) {
+          if (done == false && sum >= 75) {
+            index = i;
+            done = true;
+            temp = sum;
+          }
+          sum += value[i].Variance_Explained;
+          cumulative[i] = sum;
+        }
+
+        xpix = xaxis((index / temp) * 75 - 0.2);
+        //console.log(index);
+        //console.log(temp);
+        ypix = yaxis(75);
+       
+
+      }
+
+      intrinsicDimension(value);
+
+      // define the line
+      var valueline = d3.line()
+        .x(function (d) { return xaxis(d.PC_Number); })
+        .y(function (d) { return yaxis(d.Variance_Explained); });
+      
+
+      var valueline2 = d3.line()
+        .x(function (d) { return xaxis(d.PC_Number); })
+        .y(function (d, i) { return yaxis(cumulative[i]); });
+
+  
+
+      var svg = d3.select('svg')
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("class", "group")
+        .attr("transform",
+          "translate(" + margin.left + "," + margin.top + ")");
+      svg.append("rect")
+        .attr("width", width + 85)
+        .attr("height", height + 70)
+        .attr("x", '-70px')
+        .attr("y", '-15px')
+        .attr("style", "fill: white;stroke-width:0.5px;stroke:rgb(0,0,0);");
+
+      // Add the PC Bars.
+      svg.selectAll("bar")
+        .data(value)
+        .enter()
+        .append("rect")
+        .attr("class", "bar")
+        .attr("fill", "#69b3a2")
+        .attr("stroke", "black")
+        .attr("stroke-width", "0.5px")
+        .attr("x", function (d) { return xaxis(d.PC_Number - 0.3); })
+        .attr("y", function (d) { return yaxis(d.Variance_Explained); })
+        .attr("width", '20px')
+        .attr("height", function (d) { return height - yaxis(d.Variance_Explained); });
+
+    
+      svg.append("path")
+        .datum(value)
+        .attr("fill", "none")
+        .attr("stroke", "black")
+        .attr("stroke-width", 1.7)
+        .attr("class", "line2")
+        .attr("d", valueline2);
+  
+      svg.selectAll(".dot2")
+        .data(value)
+        .enter().append("circle")
+        .attr("class", "dot2")
+        .attr("cx", function (d) { return xaxis(d.PC_Number) })
+        .attr("cy", function (d, i) { return yaxis(cumulative[i]) })
+        .attr("r", 4)
+        .on("click", function (d) {
+
+          var pc_no = d.PC_Number;
+          console.log(pc_no);
+          calculateTopFourAttributes(pc_no)
+          // var pcs_send = JSON.stringify(no_pcs);
+
+        });;
+
+      
+      svg.append("g")
+        .attr("class", "x_axis")
+        .attr("transform", "translate(0," + height + ")")
+        // .call(d3.axisBottom(xaxis))
+        .call(d3.axisBottom(xaxis).ticks(value.length))
+        .append('text')
+        .attr('x', width / 2 + 20)
+        .attr('y', 40)
+        .attr('fill', 'black')
+        .attr('font-family', 'sans-serif')
+        .attr('font-size', '14px')
+        .attr('font-weight', 'bold')
+        .text("Principal Component Number");
+
+      // Add the Y Axis
+      svg.append("g")
+        .attr("class", "y_axis")
+        .call(d3.axisLeft(yaxis))
+        .append("text")
+        .attr("transform", "rotate(-90)")
+        .attr('y', -35)
+        .attr('x', -(height / 2))
+        .attr('fill', 'black')
+        .attr('font-family', 'sans-serif')
+        .attr('font-weight', 'bold')
+        .attr('font-size', '14px')
+        .text('% Variance Explained');
+
+      
+      }
+    // d3.select('svg').selectAll('*').remove();
+    // var svg = d3.select("#scatter")
+    //   .append("svg")
+    //   .attr("width", width + margin.left + margin.right)
+    //   .attr("height", height + margin.top + margin.bottom)
+    //   .append("g")
+    //   .attr("transform",
+    //     "translate(" + margin.left + "," + margin.top + ")");
+    
+    // top_attributes = calculateTopFourAttributes(pc_no)
+    function calculateTopFourAttributes(no_pcs) {
+      var calculatedData = {},
+      top_attributes, topValues;
+      data["loadings"].forEach(record => {
+        var value = 0,
+          key;
+        for (i = 0; i < no_pcs; i++) {
+          key = "PC" + (i + 1)
+          value += (record[key]) * (record[key])
+        }
+        calculatedData[value] = record["attributes"]
+      })
+      topValues = Object.keys(calculatedData).sort(function (a, b) { return b - a }).splice(0, 4)
+      top_attributes = topValues.map(value => { return calculatedData[value] })
+      console.log(top_attributes)
+      renderScatterMatrix(top_attributes)
+      tabledatacalculate(no_pcs,top_attributes)
+      // return (top_attributes)
+    }
+
+    // renderScatterMatrix(top_attributes)
+    function renderScatterMatrix(topAttributes) {
+      var width = 960,
+        size = 230,
+        padding = 20;
+      var x = d3.scaleLinear()
+        .range([padding / 2, size - padding / 2]);
+      // .range([padding / di, size - padding / di]);
+      var y = d3.scaleLinear()
+        .range([size - padding / 2, padding / 2]);
+      // .range([size - padding / di, padding / di]);
+      var xAxis = d3.axisBottom()
+        .scale(x)
+        .ticks(6);
+      var yAxis = d3.axisLeft()
+        .scale(y)
+        .ticks(6);
+      var color = d3.scaleOrdinal(d3.schemeCategory10);
+      var colorValue = d => d["cluster"];
+      document.getElementById('scatter').innerHTML = ""
+      // document.getElementById('scatter_text').h2.style.visibility = 'visible';
+      n = topAttributes.length //scatter plot matrix length
+      topAttributes_domain = {}
+      for (i = 0; i < n; i++) {
+        topAttributes_domain[topAttributes[i]] = d3.extent(data["clustered_data"].map(record => { return record[topAttributes[i]] }))
+      }
+      xAxis.tickSize(size * n);
+      yAxis.tickSize(-size * n);
+      var svg = d3.select("#scatter")
+        .append("svg")
+        .attr("width", size * n + padding)
+        .attr("height", size * n + padding)
+        .append("g")
+        .attr("transform", "translate(" + padding + "," + padding / 2 + ")");
+
+        // svg.append("text")
+        // // .style("padding-bottom", "10px")
+        // .attr("text-anchor", "middle")  
+        // .style("font-size", "25px") 
+        // .style("text-decoration", "bold")  
+        // .text("Scatter")
+      svg.selectAll(".x.axis")
+        .data(topAttributes)
+        .enter().append("g")
+        .attr("class", "x axis")
+        .attr("transform", function (d, i) { return "translate(" + (n - i - 1) * size + ",0)"; })
+        .each(function (d) { x.domain(topAttributes_domain[d]); d3.select(this).call(xAxis); });
+      svg.selectAll(".y.axis")
+        .data(topAttributes)
+        .enter().append("g")
+        .attr("class", "y axis")
+        .attr("transform", function (d, i) { return "translate(0," + i * size + ")"; })
+        .each(function (d) { y.domain(topAttributes_domain[d]); d3.select(this).call(yAxis); });
+      var cell = svg.selectAll(".cell")
+        .data(cross(topAttributes, topAttributes))
+        .enter().append("g")
+        .attr("class", "cell")
+        .attr("transform", function (d) { return "translate(" + (n - d.i - 1) * size + "," + d.j * size + ")"; })
+        .each(plot);
+      // Titles for the diagonal.
+      cell.filter(function (d) { return d.i === d.j; }).append("text")
+        .attr("x", padding)
+        .attr("y", padding)
+        .attr("dy", ".71em")
+        .text(function (d) { return d.x; });
+      
+      function plot(p) {
+            var cell = d3.select(this);
+            x.domain(topAttributes_domain[p.x]);
+            y.domain(topAttributes_domain[p.y]);
+            cell.append("rect")
+                .attr("class", "frame")
+                .attr("x", padding / 2)
+                .attr("y", padding / 2)
+                .attr("width", size - padding)
+                .attr("height", size - padding)
+            if (p.x != p.y) {
+                cell.selectAll("circle")
+                    .data(data)
+                    .enter().append("circle")
+                    .attr("cx", function (d) { return x(d[p.x]); })
+                    .attr("cy", function (d) { return y(d[p.y]); })
+                    .attr('fill', d => color(colorValue(d)))
+                    .attr("r", 4)
+            }
+            cell.selectAll("circle")
+          .data(data["clustered_data"])
+          .enter().append("circle")
+          .attr("cx", function (d) {console.log(d[p.x]); return x(d[p.x]); })
+          .attr("cy", function (d) { return y(d[p.y]); })
+          .attr("r", 4)
+          .attr('fill', d => color(colorValue(d)))
+        }
+      function cross(a, b) {
+        var c = [], n = a.length, m = b.length, i, j;
+        for (i = -1; ++i < n;) for (j = -1; ++j < m;) c.push({ x: a[i], i: i, y: b[j], j: j });
+        return c;
+      }
+    }
+    renderBiPlot()
+    function renderBiPlot() {
+    var width = 600,
+        height = 550;
+    var svg = d3.select("#biplot")
+        .append("svg")
+        .attr("width", width)
+        .attr("height", height);
+    var margin = 200,
+        width = svg.attr("width") - margin,
+        height = svg.attr("height") - margin;
+    var g = svg.append("g")
+        .attr("transform", "translate(" + 100 + "," + 100 + ")");
+    const xAxisG = g.append('g')
+        .attr('transform', "translate(0," + height + ")");
+    const yAxisG = g.append('g');
+    xAxisG.append('text')
+        .attr('class', 'axis-label')
+        .attr('x', width / 2)
+        .attr('y', 30)
+        .style("font-size", "15px")
+        .attr("class", "x label")
+        .attr("stroke", "black")
+        .text("PC1");
+    yAxisG.append('text')
+        .attr('class', 'axis-label')
+        .attr('x', -height / 2)
+        .attr('y', -30)
+        .attr('transform', `rotate(-90)`)
+        .style('text-anchor', 'middle')
+        .style("font-size", "15px")
+        .attr("class", "y label")
+        .attr("stroke", "black")
+        .text("PC2");
+    //Read the data
+    var x = d3.scaleLinear()
+        .domain([d3.min(data["loadings_of_dataset"], function (d) { return +d["PC1"]; }), d3.max(data["loadings_of_dataset"], function (d) { return +d["PC1"]; })])
+        .range([0, width]);
+    var x_scatter_scale = g.append("g")
+        .attr("transform", "translate(0," + height + ")")
+        .call(d3.axisBottom(x));
+    // Add Y axis
+    var y = d3.scaleLinear()
+        .domain([d3.min(data["loadings_of_dataset"], function (d) { return +d["PC2"]; }), d3.max(data["loadings_of_dataset"], function (d) { return +d["PC2"]; })])
+        .range([height, 0]);
+    g.append("g")
+        .call(d3.axisLeft(y));
+    // Add dots
+    var plotting_area = g.append('g')
+    plotting_area.selectAll("dot")
+        .data(data["loadings_of_dataset"])
+        .enter()
+        .append("circle")
+        .attr("class", "dot")
+        .attr("cx", function (d) { return x(d["PC1"]); })
+        .attr("cy", function (d) { return y(d["PC2"]); })
+        .attr("r", 2.5)
+        .on("click", function (d) {
+            console.log(d.p_number);
+        });
+    plotting_area.selectAll("line")
+        .data(data["loadings"])
+        .enter()
+        .append("line")         // attach a line
+        .attr("class","pc_line")  // colour the line
+        .attr("x1", x(0))     // x position of the first end of the line
+        .attr("y1", y(0))      // y position of the first end of the line
+        .attr("x2", function (d) { return x(d["PC1"] ); })     // x position of the second end of the line
+        .attr("y2", function (d) { return y(d["PC2"] ); })
+        .attr("stroke", "red");
+
+
+        plotting_area.selectAll("text")
+        .data(data["loadings"])
+        .enter()
+        .append("text")         // attach a line
+        .attr("class", "text")  // colour the line
+        .attr("transform", function(d){return "translate(" + x(d["PC1"]) + ","+ y(d["PC2"]) + ") rotate("+ -1* Math.atan(d["PC2"]/d["PC1"]) * (180/Math.PI) +")";})
+        .text(function(d){return d.attributes})
+        // .style("fill","red")
+        .attr("class","biplot_text");
+    
+    
+}
+
+function tabledisplay(table_data) {
+        // data = top_attributes
+        var data = table_data
+        var title = d3.keys(data[0]);
+        document.getElementById("my_table").innerHTML = ""
+        
+        var table = d3.select('#my_table')
+        table.append("text")
+        .style("padding-bottom", "10px")
+        .attr("text-anchor", "middle")  
+        .style("font-size", "25px") 
+        .style("text-decoration", "bold")  
+        .text("Table with highest attribute loadings")
+        .append('table');
+        table.append('thead').append('tr')
+            .selectAll('th')
+            .data(title).enter()
+            .append("th")
+            .text(function(d) { return d; });
+        var rows = table.append('tbody').selectAll('tr')
+            .data(data).enter()
+            .append('tr');
+        rows.selectAll('td')
+            .data(function (d) {
+                return title.map(function (k) {
+                    return { 'value': d[k], 'name': k };
+                });
+            }).enter()
+            .append('td')
+            .attr('data-th', function (d) {
+                return d.name;
+            })
+            .text(function (d) {
+                return d.value;
+            });
+}
+
+function tabledatacalculate(id, topAttributes) {
+    var attributes_processed = 0, index = 0,
+        tableData = [],
+        pc_components = [],
+        loadings =  data["loadings"],
+        tableRecord;
+    for (i = 1; i <= id; i++) {
+        pc_components.push("PC" + i);
+    }
+    while (attributes_processed < topAttributes.length && index < loadings.length) {
+        tableRecord = {}
+        if (topAttributes.includes(loadings[index]["attributes"])) {
+            tableRecord["attributes"] = loadings[index]["attributes"]
+            pc_components.forEach(pc => {
+                tableRecord[pc] = loadings[index][pc]
+            })
+            tableData.push(tableRecord)
+            attributes_processed += 1
+        }
+        index += 1
+    }
+    console.log(tableData)
+    // return tableData
+    tabledisplay(tableData)
+}
+ 
+
+  </script>
+</body>
+
+</html>
